@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Sushi — Kiểm hàng nhanh</title>
+<style>
+:root {
+  --bg:#f1f3f5; --card:#fff; --text:#17202a; --muted:#64748b;
+  --line:#e5e7eb; --dark:#111827; --soft:#f8fafc;
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+header {
+  position:sticky; top:0; z-index:20; background:var(--dark); color:#fff;
+  padding:13px 10px 11px; box-shadow:0 2px 10px #0003;
+}
+.header-inner { max-width:900px; margin:auto; }
+.topline { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+h1 { margin:0; font-size:20px; letter-spacing:-.3px; }
+.subtitle { margin-top:3px; font-size:11px; color:#cbd5e1; }
+main { max-width:900px; margin:auto; padding:10px 8px 92px; }
+.hint {
+  background:#fff; border:1px solid var(--line); border-radius:11px;
+  padding:9px 11px; margin-bottom:8px; font-size:12px; color:#475569;
+}
+.table {
+  background:var(--card); border:1px solid var(--line); border-radius:13px;
+  overflow:hidden; box-shadow:0 2px 7px #0000000a;
+}
+.head {
+  display:grid; grid-template-columns:minmax(0,1fr) 86px 116px 58px;
+  gap:7px; align-items:center; padding:7px 8px; background:var(--soft);
+  color:#64748b; font-size:10px; font-weight:800; text-transform:uppercase;
+}
+.row {
+  display:grid; grid-template-columns:minmax(0,1fr) 86px 116px 58px;
+  gap:7px; align-items:center; min-height:54px; padding:5px 8px;
+  border-top:1px solid var(--line);
+}
+.name-cell { min-width:0; display:flex; align-items:center; gap:7px; }
+.name {
+  font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis;
+}
+.unit {
+  flex:none; font-size:9px; color:#64748b; background:#eef2f7;
+  padding:3px 6px; border-radius:999px;
+}
+.last-cell {
+  color:#64748b; font-size:12px; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis;
+}
+.input-cell { min-width:0; }
+.qty {
+  width:100%; height:39px; border:1.5px solid #cbd5e1; border-radius:9px;
+  padding:0 9px; font-size:16px; font-weight:700; outline:none;
+  background:#fff; color:var(--text);
+}
+.qty:focus { border-color:#111827; box-shadow:0 0 0 2px #11182712; }
+.manual-cell { display:flex; justify-content:flex-end; }
+.manual-btn {
+  border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:8px;
+  min-width:54px; height:34px; font-size:11px; font-weight:750;
+}
+.manual-btn.active { background:#111827; color:#fff; border-color:#111827; }
+.actions {
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:#ffffffee; backdrop-filter:blur(12px);
+  border-top:1px solid var(--line); padding:8px 9px calc(8px + env(safe-area-inset-bottom));
+}
+.actions-inner { max-width:900px; margin:auto; display:flex; gap:7px; }
+.action {
+  height:44px; border:0; border-radius:11px; font-weight:800; cursor:pointer;
+}
+#checkBtn { flex:1; background:#111827; color:#fff; }
+#resetBtn { width:72px; background:#e2e8f0; color:#1e293b; }
+.result {
+  display:none; margin-top:9px; background:#fff; border:1px solid var(--line);
+  border-radius:13px; padding:11px; box-shadow:0 2px 7px #0000000a;
+}
+.result.show { display:block; }
+.result h2 { font-size:15px; margin:0 0 7px; }
+.result-list { list-style:none; margin:0; padding:0; }
+.result-list li {
+  display:flex; justify-content:space-between; gap:10px;
+  padding:6px 0; border-bottom:1px solid #edf0f2; font-size:12px;
+}
+.result-list li:last-child { border-bottom:0; }
+.add-box {
+  margin-top:9px; padding:10px; background:var(--soft); border-radius:10px;
+}
+.add-head { display:flex; justify-content:space-between; align-items:center; }
+.add-head strong { font-size:13px; }
+.copy {
+  border:1px solid #cbd5e1; background:#fff; border-radius:8px;
+  padding:6px 9px; font-weight:800; font-size:11px;
+}
+.add-text {
+  margin-top:6px; white-space:pre-line; font:12px/1.55 ui-monospace,
+  SFMono-Regular,Menlo,monospace;
+}
+.empty { color:#64748b; }
+footer { text-align:center; color:#94a3b8; font-size:10px; margin-top:9px; }
+@media (max-width:620px) {
+  .head, .row {
+    grid-template-columns:minmax(0,1fr) 70px 94px 50px;
+    gap:5px; padding-left:6px; padding-right:6px;
+  }
+  .head { font-size:9px; }
+  .row { min-height:51px; }
+  .name { font-size:13px; }
+  .unit { font-size:8px; padding:2px 5px; }
+  .last-cell { font-size:11px; }
+  .qty { height:38px; font-size:16px; padding:0 7px; }
+  .manual-btn { min-width:47px; height:32px; font-size:10px; }
+}
+@media (max-width:390px) {
+  .head, .row { grid-template-columns:minmax(0,1fr) 62px 86px 46px; }
+  .name { font-size:12px; }
+  .last-cell { font-size:10px; }
+  .qty { font-size:15px; }
+  .manual-btn { min-width:43px; padding:0 4px; }
+}
+/* ===== POPUP LỊCH SỬ ===== */
+
+.history {
+  margin-top: 12px;
+}
+
+.history h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+
+.history-item strong {
+  font-size: 13px;
+}
+
+.history-item span {
+  grid-column: 1;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.history-view-btn {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  border: 0;
+  background: #111827;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.history-empty {
+  padding: 14px;
+  text-align: center;
+  color: #64748b;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+
+/* ===== MODAL ===== */
+
+.history-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #f8fafc;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.history-modal.show {
+  display: block;
+}
+
+.history-modal.show {
+  display: flex;
+}
+
+.history-modal-box {
+  width: 100%;
+  min-height: 100vh;
+  background: #fff;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.history-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #111827;
+  color: #fff;
+  padding: 14px;
+  border-radius: 17px 17px 0 0;
+}
+
+.history-modal-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-modal-title strong {
+  font-size: 16px;
+}
+
+.history-modal-time {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.history-close {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: #ffffff1a;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.history-modal-body {
+  padding: 12px;
+}
+
+.history-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 3px 0 7px;
+}
+
+.history-quantity-list {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.history-quantity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #edf0f2;
+  font-size: 12px;
+}
+
+.history-quantity-row:last-child {
+  border-bottom: 0;
+}
+
+.history-quantity-name {
+  font-weight: 650;
+}
+
+.history-quantity-value {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.history-add-box {
+  margin-top: 12px;
+  padding: 11px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.history-add-list {
+  margin: 7px 0 0;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.history-no-add {
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .history-modal {
+    padding: 10px;
+  }
+
+  .history-modal-box {
+    max-height: 92vh;
+    border-radius: 14px;
+  }
+
+  .history-modal-head {
+    border-radius: 14px 14px 0 0;
+  }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="topline">
+      <h1>🍣 BẾP SUSHI — KIỂM HÀNG</h1>
+    </div>
+    <div class="subtitle">Màn hình kiểm nhanh • nhìn hàng → nhập số → xuống món tiếp theo</div>
+  </div>
+</header>
+
+<main>
+  <div class="hint">
+    <b>Kiểm nhanh:</b> “Lần trước” là số lượng của lần kiểm gần nhất.
+    Ô bên phải là số lượng bạn vừa nhìn thấy hiện tại.
+  </div>
+
+  <div class="table">
+    <div class="head">
+      <div>Nguyên vật liệu</div>
+      <div>Lần trước</div>
+      <div>Hiện tại</div>
+      <div></div>
+    </div>
+    
+    <div class="row" data-index="0">
+      <div class="name-cell">
+        <span class="name">Trứng cam</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-0">—</div>
+      <div class="input-cell">
+        <input id="qty-0" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="0">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="1">
+      <div class="name-cell">
+        <span class="name">Trứng đỏ</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-1">—</div>
+      <div class="input-cell">
+        <input id="qty-1" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="1">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="2">
+      <div class="name-cell">
+        <span class="name">Trứng vàng</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-2">—</div>
+      <div class="input-cell">
+        <input id="qty-2" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="2">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="3">
+      <div class="name-cell">
+        <span class="name">Trứng xanh</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-3">—</div>
+      <div class="input-cell">
+        <input id="qty-3" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="3">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="4">
+      <div class="name-cell">
+        <span class="name">Trứng đen</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-4">—</div>
+      <div class="input-cell">
+        <input id="qty-4" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="4">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="5">
+      <div class="name-cell">
+        <span class="name">Tôm cắt</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-5">—</div>
+      <div class="input-cell">
+        <input id="qty-5" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="5">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="6">
+      <div class="name-cell">
+        <span class="name">Trứng cá hồi</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-6">—</div>
+      <div class="input-cell">
+        <input id="qty-6" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="6">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="7">
+      <div class="name-cell">
+        <span class="name">Bò Fuji</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-7">—</div>
+      <div class="input-cell">
+        <input id="qty-7" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="7">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="8">
+      <div class="name-cell">
+        <span class="name">Thanh cua cam</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-8">—</div>
+      <div class="input-cell">
+        <input id="qty-8" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="8">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="9">
+      <div class="name-cell">
+        <span class="name">Thanh cua đỏ</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-9">—</div>
+      <div class="input-cell">
+        <input id="qty-9" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="9">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="10">
+      <div class="name-cell">
+        <span class="name">Rong biển cuộn</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-10">—</div>
+      <div class="input-cell">
+        <input id="qty-10" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="10">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="11">
+      <div class="name-cell">
+        <span class="name">Phô mai vuông</span>
+        <span class="unit">thanh</span>
+      </div>
+      <div class="last-cell" id="last-11">—</div>
+      <div class="input-cell">
+        <input id="qty-11" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="11">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="12">
+      <div class="name-cell">
+        <span class="name">Xúc xích</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-12">—</div>
+      <div class="input-cell">
+        <input id="qty-12" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="12">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="13">
+      <div class="name-cell">
+        <span class="name">Cải vàng</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-13">—</div>
+      <div class="input-cell">
+        <input id="qty-13" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="13">
+      </div>
+      <div class="manual-cell"><button class="manual-btn" data-index="13" type="button" aria-label="Đánh dấu Cải vàng cần thêm">+ Thêm</button></div>
+    </div>
+    
+    <div class="row" data-index="14">
+      <div class="name-cell">
+        <span class="name">Cá bào</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-14">—</div>
+      <div class="input-cell">
+        <input id="qty-14" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="14">
+      </div>
+      <div class="manual-cell"><button class="manual-btn" data-index="14" type="button" aria-label="Đánh dấu Cá bào cần thêm">+ Thêm</button></div>
+    </div>
+    
+    <div class="row" data-index="15">
+      <div class="name-cell">
+        <span class="name">Chà bông</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-15">—</div>
+      <div class="input-cell">
+        <input id="qty-15" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="15">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="16">
+      <div class="name-cell">
+        <span class="name">Cá ngừ hộp</span>
+        <span class="unit">hộp</span>
+      </div>
+      <div class="last-cell" id="last-16">—</div>
+      <div class="input-cell">
+        <input id="qty-16" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="16">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="17">
+      <div class="name-cell">
+        <span class="name">Giấm</span>
+        <span class="unit">bình</span>
+      </div>
+      <div class="last-cell" id="last-17">—</div>
+      <div class="input-cell">
+        <input id="qty-17" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="17">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+    <div class="row" data-index="18">
+      <div class="name-cell">
+        <span class="name">Bột chiên cuộn</span>
+        <span class="unit">bọc</span>
+      </div>
+      <div class="last-cell" id="last-18">—</div>
+      <div class="input-cell">
+        <input id="qty-18" class="qty" type="number" min="0" step="0.1"
+               inputmode="decimal" enterkeyhint="next" autocomplete="off"
+               placeholder="—" data-index="18">
+      </div>
+      <div class="manual-cell"></div>
+    </div>
+    
+  </div>
+
+  <section id="result" class="result    ">
+<h2>📋 KẾT QUẢ KIỂM HÀNG</h2>
+    <ul id="resultList" class="result-list"></ul>
+  <div class="add-box">
+  <div class="add-head">
+    <strong>🛒 NHỮNG THỨ CẦN THÊM</strong>
+
+    <div>
+      <button class="copy" id="editBtn" type="button">EDIT</button>
+      <button class="copy" id="copyBtn" type="button">COPY</button>
+    </div>
+  </div>
+
+  <div id="addText" class="add-text"></div>
+</div>
+  </section>
+
+ <section id="history" class="history">
+
+  <h2>🕘 LỊCH SỬ KIỂM HÀNG</h2>
+
+  <div id="historyList" class="history-list">
+    <div class="history-empty">
+      Chưa có lịch sử kiểm hàng.
+    </div>
+  </div>
+
+</section>
+
+<footer>Dữ liệu lần kiểm được lưu trên thiết bị này.</footer>
+</main>
+<!-- ===== MÀN HÌNH XEM LỊCH SỬ ===== -->
+
+<div id="historyModal" class="history-modal">
+
+  <div class="history-modal-box">
+
+    <div class="history-modal-head">
+
+      <div class="history-modal-title">
+
+        <strong id="historyModalTitle">
+          📋 CHI TIẾT LẦN KIỂM
+        </strong>
+
+        <button
+          id="historyClose"
+          class="history-close"
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div
+        id="historyModalTime"
+        class="history-modal-time"
+      ></div>
+
+    </div>
+
+    <div class="history-modal-body">
+
+      <div class="history-section-title">
+        📦 SỐ LƯỢNG ĐÃ KIỂM
+      </div>
+
+      <div
+        id="historyQuantityList"
+        class="history-quantity-list"
+      ></div>
+
+      <div class="history-add-box">
+
+        <div class="history-section-title">
+          🛒 NHỮNG THỨ CẦN THÊM
+        </div>
+
+        <div id="historyAddList"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+<div class="actions">
+  <div class="actions-inner">
+    <button id="checkBtn" class="action" type="button">✓ HOÀN TẤT KIỂM HÀNG</button>
+    <button id="resetBtn" class="action" type="button">Làm lại</button>
+  </div>
+</div>
+
+<script type="module">
+ 
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
+import {
+  getAuth,
+  signInAnonymously
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+ apiKey: "AIzaSyAzTNiSh9R5MgDkudtNHzVFh4m7-c3S1DA",
+  authDomain: "tamisushi-9bda9.firebaseapp.com",
+  projectId: "tamisushi-9bda9",
+  storageBucket: "tamisushi-9bda9.firebasestorage.app",
+  messagingSenderId: "175405895604",
+  appId: "1:175405895604:web:0de2c915c6a4547f3bece1",
+  measurementId: "G-51Y3XP56L4"
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
+
+const historyCollection = collection(db, "history");
+
+
+console.log("Firebase đã khởi tạo:", app.name);
+signInAnonymously(auth)
+  .then(() => {
+
+    console.log("Firebase Anonymous Auth: OK");
+
+    renderHistory();
+
+  })
+  .catch((error) => {
+
+    console.error("Firebase Auth lỗi:", error);
+
+  });
+const INGREDIENTS = [{"name": "Trứng cam", "unit": "hộp", "threshold": 2, "type": "threshold"}, {"name": "Trứng đỏ", "unit": "hộp", "threshold": 2, "type": "threshold"}, {"name": "Trứng vàng", "unit": "hộp", "threshold": 1, "type": "threshold"}, {"name": "Trứng xanh", "unit": "hộp", "threshold": 1, "type": "threshold"}, {"name": "Trứng đen", "unit": "hộp", "threshold": 1, "type": "threshold"}, {"name": "Tôm cắt", "unit": "hộp", "threshold": 1, "type": "threshold"}, {"name": "Trứng cá hồi", "unit": "hộp", "threshold": 4, "type": "threshold"}, {"name": "Bò Fuji", "unit": "bọc", "threshold": 5, "type": "threshold"}, {"name": "Thanh cua cam", "unit": "bọc", "threshold": 5, "type": "threshold"}, {"name": "Thanh cua đỏ", "unit": "bọc", "threshold": 4, "type": "threshold"}, {"name": "Rong biển cuộn", "unit": "bọc", "threshold": 3, "type": "threshold"}, {"name": "Phô mai vuông", "unit": "thanh", "threshold": 1, "type": "threshold"}, {"name": "Xúc xích", "unit": "bọc", "threshold": 4, "type": "threshold"}, {"name": "Cải vàng", "unit": "bọc", "threshold": null, "type": "manual"}, {"name": "Cá bào", "unit": "bọc", "threshold": null, "type": "manual"}, {"name": "Chà bông", "unit": "bọc", "threshold": 4, "type": "threshold"}, {"name": "Cá ngừ hộp", "unit": "hộp", "threshold": 3, "type": "threshold"}, {"name": "Giấm", "unit": "bình", "threshold": 0.5, "type": "threshold"}, {"name": "Bột chiên cuộn", "unit": "bọc", "threshold": 0.5, "type": "threshold"}];
+const STORAGE_KEY = "sushi_kitchen_last_check_v3";
+const MANUAL_KEY = "sushi_kitchen_manual_v3";
+
+const lastChecks = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+const manualFlags = JSON.parse(localStorage.getItem(MANUAL_KEY) || "{}");
+
+function formatQty(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return Number.isInteger(n) ? String(n) : String(n).replace(/\.0+$/, "");
+}
+
+function renderLastChecks() {
+  INGREDIENTS.forEach((item, i) => {
+    const el = document.getElementById("last-" + i);
+    el.textContent = lastChecks[i] !== undefined
+      ? formatQty(lastChecks[i]) + " " + item.unit
+      : "—";
+  });
+}
+
+function renderManual() {
+
+  document.querySelectorAll(".row").forEach(row => {
+
+    const index = row.dataset.index;
+
+    const manualCell = row.querySelector(".manual-cell");
+
+    if (!manualCell) return;
+
+    // Nếu chưa có nút thì tự tạo
+    if (!manualCell.querySelector(".manual-btn")) {
+
+      const btn = document.createElement("button");
+
+      btn.className = "manual-btn";
+      btn.type = "button";
+      btn.dataset.index = index;
+
+      btn.addEventListener("click", () => {
+
+        manualFlags[index] = !manualFlags[index];
+
+        localStorage.setItem(
+          MANUAL_KEY,
+          JSON.stringify(manualFlags)
+        );
+  
+
+        renderManual();
+
+      });
+
+      manualCell.appendChild(btn);
+    }
+
+    // Cập nhật trạng thái nút
+    const btn = manualCell.querySelector(".manual-btn");
+
+    const active = !!manualFlags[index];
+
+    btn.classList.toggle("active", active);
+
+    btn.textContent = active
+      ? "✓ Thêm"
+      : "+ Thêm";
+
+  });
+
+}
+
+const inputs = [...document.querySelectorAll(".qty")];
+
+inputs.forEach((input, pos) => {
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const next = inputs[pos + 1];
+      if (next) {
+        next.focus();
+        next.select();
+      } else {
+        document.getElementById("checkBtn").focus();
+      }
+    }
+  });
+});
+
+document.getElementById("checkBtn").addEventListener("click", async () => {
+  const resultList = document.getElementById("resultList");
+  const addLines = [];
+  resultList.innerHTML = "";
+
+  INGREDIENTS.forEach((item, i) => {
+
+  const input = document.getElementById("qty-" + i);
+  const raw = input.value.trim();
+
+  let qty = null;
+
+  // Nếu có nhập số lượng
+  if (raw !== "") {
+
+    qty = Number(raw);
+
+    if (!Number.isFinite(qty) || qty < 0) return;
+
+    lastChecks[i] = qty;
+
+    // Hiện số lượng trong kết quả
+    if (!item.type.includes("_hidden")) {
+
+      const li = document.createElement("li");
+      const left = document.createElement("span");
+      const right = document.createElement("strong");
+
+      left.textContent = item.name;
+      right.textContent = formatQty(qty) + " " + item.unit;
+
+      li.append(left, right);
+      resultList.appendChild(li);
+    }
+  }
+
+  // Có bấm + Thêm HOẶC số lượng thấp hơn ngưỡng
+  const shouldAdd =
+    manualFlags[i] ||
+    (
+      qty !== null &&
+      item.type.startsWith("threshold") &&
+      qty <= item.threshold
+    );
+
+  if (shouldAdd) {
+    addLines.push("THÊM " + item.name.toUpperCase());
+  }
+
+});
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lastChecks));
+  // Lưu một lần kiểm hàng vào lịch sử
+const history = JSON.parse(
+  localStorage.getItem("sushi_kitchen_history_v1") || "[]"
+);
+
+history.unshift({
+  time: new Date().toLocaleString("vi-VN"),
+  items: { ...lastChecks },
+  addList: [...addLines]
+});
+
+localStorage.setItem(
+  "sushi_kitchen_history_v1",
+  JSON.stringify(history)
+);
+renderHistory();
+try {
+
+  await addDoc(historyCollection, {
+    time: new Date().toLocaleString("vi-VN"),
+    items: { ...lastChecks },
+    addList: [...addLines],
+    createdAt: serverTimestamp()
+  });
+
+  console.log("Firestore: ĐÃ LƯU LỊCH SỬ KIỂM HÀNG");
+
+} catch (error) {
+
+  console.error("Firestore lưu lỗi:", error);
+
+}
+  document.getElementById("addText").textContent =
+    addLines.length ? addLines.join("\n") : "Không có nguyên vật liệu cần thêm.";
+
+  document.getElementById("result").classList.add("show");
+  renderLastChecks();
+
+  document.getElementById("result").scrollIntoView({behavior:"smooth", block:"start"});
+});
+
+document.getElementById("editBtn").addEventListener("click", () => {
+
+  const addText = document.getElementById("addText");
+
+  const currentText = addText.textContent;
+
+  addText.innerHTML = `
+    <textarea id="editArea" style="
+      width:100%;
+      min-height:150px;
+      box-sizing:border-box;
+      padding:12px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      font-size:14px;
+      font-family:inherit;
+      resize:vertical;
+    ">${currentText}</textarea>
+
+    <button id="saveEditBtn" class="copy" type="button" style="margin-top:8px;">
+      LƯU
+    </button>
+  `;
+
+  document.getElementById("saveEditBtn").addEventListener("click", () => {
+
+    const editedText = document.getElementById("editArea").value;
+
+    addText.textContent = editedText;
+
+  });
+
+});
+
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  const resultItems = [...document.querySelectorAll("#resultList li")]
+    .map(li => {
+      const left = li.querySelector("span")?.textContent.trim() || "";
+      const right = li.querySelector("strong")?.textContent.trim() || "";
+      return `${left}: ${right}`;
+    })
+    .join("\n");
+
+  const addItems = document.getElementById("addText").textContent
+    .trim()
+    .split("\n")
+    .map(line => line.replace(/^THÊM\s+/i, "Thêm "))
+    .join("\n");
+
+  const copyText = resultItems + "\n\n" + addItems;
+
+  try {
+    await navigator.clipboard.writeText(copyText);
+
+    const btn = document.getElementById("copyBtn");
+    btn.textContent = "ĐÃ COPY ✓";
+
+    setTimeout(() => {
+      btn.textContent = "COPY";
+    }, 1400);
+  } catch (e) {
+    alert("Không thể tự copy trên trình duyệt này.");
+  }
+});
+
+document.getElementById("resetBtn").addEventListener("click", ()=> {
+  const confirmed = confirm(
+    "Bạn có chắc chắn muốn làm lại không?\n\n"+
+    "Toàn bộ số lượng hiện tại sẽ bị xóa."
+  );
+  if (!confirmed){
+    return;
+}
+inputs.forEach(i=>i.value="");
+document.getElementById("result").classList.remove("show");
+window.scrollTo({top:0, behavior:"smooth"});
+if (inputs[0]) inputs[0].focus();
+});
+
+renderLastChecks();
+renderManual();
+
+async function renderHistory() {
+
+  const historyList = document.getElementById("historyList");
+
+  historyList.innerHTML = `
+    <div class="history-empty">
+      Đang tải lịch sử...
+    </div>
+  `;
+
+  try {
+
+    const historyQuery = query(
+      historyCollection,
+      orderBy("createdAt", "desc"),
+      limit(100)
+    );
+
+    const snapshot = await getDocs(historyQuery);
+
+    const history = [];
+
+    snapshot.forEach((doc) => {
+      history.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    if (history.length === 0) {
+
+      historyList.innerHTML = `
+        <div class="history-empty">
+          Chưa có lịch sử kiểm hàng.
+        </div>
+      `;
+
+      return;
+    }
+
+    historyList.innerHTML = "";
+
+    history.forEach((record, index) => {
+
+      const box = document.createElement("div");
+
+      box.className = "history-item";
+
+      box.innerHTML = `
+        <strong>Lần kiểm #${history.length - index}</strong>
+
+        <span>${record.time || "Không có thời gian"}</span>
+
+        <button type="button" class="history-view-btn">
+          XEM
+        </button>
+      `;
+
+      const viewBtn =
+        box.querySelector(".history-view-btn");
+
+    viewBtn.addEventListener("click", () => {
+
+  const items = record.items || {};
+
+  // Tiêu đề
+  document.getElementById("historyModalTitle").textContent =
+    "📋 CHI TIẾT LẦN KIỂM #" + (history.length - index);
+
+  // Thời gian
+  document.getElementById("historyModalTime").textContent =
+    record.time || "Không có thời gian";
+
+  // Danh sách số lượng
+  const quantityList =
+    document.getElementById("historyQuantityList");
+
+  quantityList.innerHTML = "";
+
+  INGREDIENTS.forEach((item, i) => {
+
+    if (items[i] === undefined) return;
+
+    const row = document.createElement("div");
+
+    row.className = "history-quantity-row";
+
+    row.innerHTML = `
+      <span class="history-quantity-name">
+        ${item.name}
+      </span>
+
+      <span class="history-quantity-value">
+        ${formatQty(items[i])} ${item.unit}
+      </span>
+    `;
+
+    quantityList.appendChild(row);
+
+  });
+
+  // Danh sách cần thêm
+  const addList =
+    document.getElementById("historyAddList");
+
+  if (record.addList && record.addList.length) {
+
+    addList.innerHTML = `
+      <ul class="history-add-list">
+        ${record.addList
+          .map(item => `<li>${item}</li>`)
+          .join("")}
+      </ul>
+    `;
+
+  } else {
+
+    addList.innerHTML = `
+      <div class="history-no-add">
+        Không có nguyên vật liệu cần thêm.
+      </div>
+    `;
+
+  }
+
+  // Mở màn hình lịch sử riêng
+  document
+    .getElementById("historyModal")
+    .classList.add("show");
+
+});
+document
+  .getElementById("historyClose")
+  .addEventListener("click", () => {
+
+    document
+      .getElementById("historyModal")
+      .classList.remove("show");
+
+  });
+
+      historyList.appendChild(box);
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Firestore đọc lịch sử lỗi:",
+      error
+    );
+
+    historyList.innerHTML = `
+      <div class="history-empty">
+        Không thể tải lịch sử kiểm hàng.
+      </div>
+    `;
+
+  }
+
+}
+
+
+
+</script>
+</body>
+</html>
